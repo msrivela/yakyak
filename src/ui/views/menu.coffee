@@ -497,7 +497,7 @@ templateMenu = (viewstate) ->
     [
         {
             label: ''
-        } if isLinux
+        } if isDarwin
         {
             label: i18n.__ 'menu.file.title:YakYak'
             submenu: templateYakYak viewstate

@@ -100,7 +100,9 @@
                 padding-right: 30px;
                 background: var(--altgrey);
                 .message .tweet,
-                .message .instagram {
+                .message .instagram,
+                .message .page-preview,
+                .message .youtube {
                     margin: 10px -35px 3px -10px;
                 }
             }
@@ -162,12 +164,16 @@
                     background: var(--tweetbg);
                     color: var(--tweettext);
                 }
-                .instagram {
+                .instagram,
+                .page-preview,
+                .youtube {
                     background: var(--instagrambg);
                     color: var(--instagramtext);
                 }
                 .tweet,
-                .instagram {
+                .instagram,
+                .page-preview,
+                .youtube {
                     font-size: 0.9em;
                     font-size: 14px;
                     margin: 10px -10px 3px -35px;
@@ -177,16 +183,28 @@
                     img {
                         border-radius: 0;
                         display: block;
-                        max-height: none;
-                        width: 100%;
+                        max-height: 500px;
+                        /*width: 100%;*/
                     }
                 }
                 &:last-child {
                     .tweet,
-                    .instagram {
+                    .instagram,
+                    .page-preview,
+                    .youtube {
                         margin-bottom: -5px;
                     }
                 }
+              .youtube {
+                p {
+                  max-height: 200px;
+                  overflow-y: auto;
+                }
+                img {
+                  height: auto;
+                  width: auto;
+                }
+              }
             }
         }
     }

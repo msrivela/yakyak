@@ -2,6 +2,7 @@ moment    = require 'moment'
 shell     = require('electron').shell
 urlRegexp = require 'uber-url-regex'
 url       = require 'url'
+youtubeRegex = require 'youtube-regex'
 
 {nameof, initialsof, nameofconv, linkto, later, forceredraw, throttle,
 getProxiedName, fixlink, isImg, getImageUrl, drawAvatar}  = require '../util'
@@ -368,6 +369,44 @@ formatters = [
                     data.text
             if data.imageUrl and preload data.imageUrl
                 img src: data.imageUrl
+    # youtube preview
+    (seg) ->
+        href = seg?.text
+        if !youtubeRegex().test(href)
+            return
+    
+        data = preloadYoutubeVideo href
+        if !data
+            return
+        div class:'youtube', ->
+            if data.title
+                b ->
+                    data.title
+            if data.imageUrl and preload data.imageUrl
+                a {href: href, onclick}, -> img src: data.imageUrl
+            if data.description
+                p ->
+                    data.description
+    #teste
+    (seg) ->
+        href = seg?.text
+        if !href
+            return
+        matches = href.match /^(https?:\/\/)(.+\.)?/
+        if !matches || youtubeRegex().test(href)
+            return
+        data = preloadPage href
+        if !data
+            return
+        div class:'page-preview', ->
+            if data.title
+                b ->
+                    data.title
+            if data.description
+                p ->
+                    data.description
+            if data.imageUrl and preload data.imageUrl
+                a {href:data.imageUrl, onclick},  -> img src: data.imageUrl
 ]
 
 stripProxiedColon = (txt) ->
@@ -423,6 +462,88 @@ preloadInstagramPhoto = (href) ->
             later -> action 'loadedinstagramphoto'
     return cache
 
+preloadPage = (href) ->
+    cache = preload_cache[href]
+    if not cache
+        preload_cache[href] = {}
+        fetch href
+        .catch (err) ->
+            console.error 'Failed to fetch url: ' + href
+        .then (response) ->
+            return if not response.headers.get("content-type").includes "text/html"
+            response.text()
+        .then (text) ->
+            parser = new DOMParser();
+            htmlDocument = parser.parseFromString text, "text/html"
+        
+            title = undefined
+            htmlDocument.querySelectorAll('meta[property$="title"], title').forEach (v) ->
+                if title != undefined
+                    return
+                if v.text
+                    if v.text.length > 0
+                        title = v.text
+                else
+                    title = v.content
+        
+            retorna = false
+            if title != undefined
+                preload_cache[href].title = title
+                retorna = true
+        
+            imageUrl = undefined
+            htmlDocument.querySelectorAll('meta[property$="image"]').forEach (v) ->
+                if imageUrl != undefined
+                    return
+                imageUrl = v.content
+            if imageUrl != undefined
+                preload_cache[href].imageUrl = imageUrl
+                retorna = true
+    
+                
+            description = undefined
+            htmlDocument.querySelectorAll('meta[property$="description"], meta[name="description"]').forEach (v) ->
+                if description != undefined
+                    return
+                if v.content.length > 0
+                    description = v.content
+            if description != undefined
+                preload_cache[href].description = description
+                retorna = true
+                
+            if !retorna
+                preload_cache[href] = null
+                
+            later -> action 'loadedpage'
+                
+    return cache
+
+preloadYoutubeVideo = (href) ->
+    cache = preload_cache[href]
+    if not cache
+        preload_cache[href] = {}
+
+        videoId = youtubeRegex().exec(href)[1]
+        infoUrl = 'https://www.youtube.com/get_video_info?html5=1&video_id='+videoId
+        fetch infoUrl
+        .then (response) ->
+            return response.text()
+        .then (text) ->
+            params = new URLSearchParams(text)
+            try
+                {videoDetails} = JSON.parse params.get 'player_response'
+                preload_cache[href].imageUrl = 'https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg'
+                preload_cache[href].title = videoDetails.title
+                preload_cache[href].description = videoDetails.shortDescription
+            catch e
+        .catch (err) ->
+            preload_cache[href] = null
+            console.error 'Failed to fetch info for video ' + videoId + '. url: ' + infoUrl
+    
+        later -> action 'loadedyoutubevideo'
+            
+    return cache
+
 formatAttachment = (att) ->
     # console.log 'attachment', att if att.length > 0
     if att?[0]?.embed_item?.type_
@@ -459,6 +580,12 @@ handle 'loadedtweet', ->
     updated 'conv'
 
 handle 'loadedinstagramphoto', ->
+    updated 'conv'
+
+handle 'loadedpage', ->
+    updated 'conv'
+
+handle 'loadedyoutubevideo', ->
     updated 'conv'
 
 extractProtobufStyle = (att) ->

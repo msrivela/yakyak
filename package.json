@@ -7,6 +7,7 @@
     "start": "gulp && electron app",
     "dev": "electron app --debug",
     "gulp": "gulp",
+    "gulp:watch": "gulp watch",
     "electron": "electron",
     "test": "mocha",
     "deploy": "gulp deploy",
@@ -58,7 +59,8 @@
     "request": "^2.88.0",
     "tmp": "0.0.31",
     "trifl": "0.0.10",
-    "uber-url-regex": "^5.0.5"
+    "uber-url-regex": "^5.0.5",
+    "youtube-regex": "^1.0.5"
   },
   "optionalDependencies": {
     "electron-installer-flatpak": "^0.6.0"

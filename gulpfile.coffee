@@ -198,7 +198,8 @@ gulp.task 'watch', ->
     gulp.series 'default', 'reloader', 'html'
     # watch to rebuild
     sources = (v for k, v of paths)
-    gulp.watch sources, gulp.series('default')
+    #gulp.watch sources, gulp.series('default')
+    gulp.watch sources, gulp.series 'less', 'coffee', 'html'
 
 #
 #
