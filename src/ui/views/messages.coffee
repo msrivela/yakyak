@@ -334,7 +334,7 @@ formatters = [
         imageUrl = getImageUrl href # false if can't find one
         if imageUrl and preload imageUrl
             div ->
-                img src: imageUrl
+                a {href: href, onclick}, -> img src: imageUrl
     # twitter preview
     (seg) ->
         href = seg?.text
@@ -398,15 +398,19 @@ formatters = [
         data = preloadPage href
         if !data
             return
-        div class:'page-preview', ->
-            if data.title
-                b ->
-                    data.title
-            if data.description
-                p ->
-                    data.description
-            if data.imageUrl and preload data.imageUrl
-                a {href:data.imageUrl, onclick},  -> img src: data.imageUrl
+        if data.imageUrl == href
+            a {href:data.imageUrl, onclick},  -> img src: data.imageUrl
+        else
+            div class:'page-preview', ->
+                if data.title
+                    b ->
+                        data.title
+                if data.description
+                    p ->
+                        data.description
+                if data.imageUrl and preload data.imageUrl
+                    a {href:data.imageUrl, onclick},  -> img src: data.imageUrl
+        
 ]
 
 stripProxiedColon = (txt) ->
@@ -470,8 +474,12 @@ preloadPage = (href) ->
         .catch (err) ->
             console.error 'Failed to fetch url: ' + href
         .then (response) ->
-            return if not response.headers.get("content-type").includes "text/html"
-            response.text()
+            if response.headers.get("content-type").includes "image/"
+                preload_cache[href].imageUrl = href
+                later -> action 'loadedpage'
+            else
+                return if not response.headers.get("content-type").includes "text/html"
+                response.text()
         .then (text) ->
             parser = new DOMParser();
             htmlDocument = parser.parseFromString text, "text/html"
@@ -511,9 +519,9 @@ preloadPage = (href) ->
                 preload_cache[href].description = description
                 retorna = true
                 
-            if !retorna
-                preload_cache[href] = null
-                
+            #if !retorna
+            #    preload_cache[href] = null
+
             later -> action 'loadedpage'
                 
     return cache
